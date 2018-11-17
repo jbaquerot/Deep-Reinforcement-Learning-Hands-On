@@ -2,11 +2,13 @@ import gym
 import ptan
 import argparse
 import numpy as np
+import os.path
 
 import torch
 import torch.optim as optim
 from tensorboardX import SummaryWriter
 from lib import dqn_model, common
+
 
 DEFAULT_N_STEP = 2
 STATES_TO_EVALUATE = 1000
@@ -21,20 +23,34 @@ def calc_values_of_states(states, net, device= "cpu"):
 		mean_vals.append(best_action_values_v.mean().item())
 	return np.mean(mean_vals)
 
+def save_model(model, modelfile):
+	print("Saving model in {}".format(modelfile))
+	torch.save(model.state_dict(), modelfile)
+
+def load_model(model, modelfile):
+	if os.path.isfile(modelfile):
+		print("Loading model from {}".format(modelfile))
+		model.load_state_dict(torch.load(modelfile, map_location= lambda storage, loc: storage))
+
+
 if __name__ == '__main__':
 	params = common.HYPERPARAMS['pong']
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--cuda", default= False, action= "store_true", help= "Enable cuda")
 	parser.add_argument("--n", default= DEFAULT_N_STEP, type= int , help= "number of steps to DQN")
 	parser.add_argument("--double", default= False, action= "store_true" , help= "Enable double DQN")
+	parser.add_argument("-m", "--model", required = True, help= "Model file to load and save")
+
 	args = parser.parse_args()
 	device = torch.device("cuda" if args.cuda else "cpu")
 
 	env = gym.make(params['env_name'])
 	env = ptan.common.wrappers.wrap_dqn(env)
 
-	writer = SummaryWriter("../../logs/07/03_dqn_double", comment= "-" + params['run_name'] + "-double")
+	writer = SummaryWriter("../../../logs/07/03_dqn_double", comment= "-" + params['run_name'] + "-double")
+	
 	net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
+	load_model(net, args.model)
 	tgt_net = ptan.agent.TargetNet(net)
 
 	selector = ptan.actions.EpsilonGreedyActionSelector(epsilon= params['epsilon_start'])
@@ -76,6 +92,7 @@ if __name__ == '__main__':
 
 			if frame_idx % params['target_net_sync'] == 0:
 				tgt_net.sync()
+				save_model(tgt_net.target_model, args.model)
 
 			if frame_idx % EVAL_EVERY_FRAME == 0:
 				mean_val = calc_values_of_states(eval_states, net, device= device)
