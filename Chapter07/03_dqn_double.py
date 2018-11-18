@@ -47,7 +47,7 @@ if __name__ == '__main__':
 	env = gym.make(params['env_name'])
 	env = ptan.common.wrappers.wrap_dqn(env)
 
-	writer = SummaryWriter("../../../logs/07/03_dqn_double", comment= "-" + params['run_name'] + "-double")
+	writer = SummaryWriter("../../logs/07/03_dqn_double", comment= "-" + params['run_name'] + "-double")
 	
 	net = dqn_model.DQN(env.observation_space.shape, env.action_space.n).to(device)
 	load_model(net, args.model)
