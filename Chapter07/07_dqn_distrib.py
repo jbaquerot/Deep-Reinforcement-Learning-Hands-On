@@ -12,14 +12,14 @@ from tensorboardX import SummaryWriter
 
 from lib import common
 
-SAVE_STATES_IMG = False
-SAVE_TRANSITIONS_IMG = False
+SAVE_STATES_IMG = True
+SAVE_TRANSITIONS_IMG = True
 
 # Switch matplolib into "headless" mode, which is when 
 # it doesn't require display for plotting
 if SAVE_STATES_IMG or SAVE_TRANSITIONS_IMG:
 	import matplotlib as mpl
-	mpg.use("Agg")
+	mpl.use("Agg")
 	import matplotlib.pylab as plt
 
 Vmax = 10
@@ -96,7 +96,7 @@ def save_state_images(frame_idx, states, net, device="cpu", max_states= 200):
 			for action_idx in range(num_actions):
 				plt.subplot(num_actions, 1, action_idx + 1)
 				plt.bar(p, action_prob[batch_idx, action_idx], width = 0.5)
-			plt.savefig("states/%05_%08d.png" & (ofs + batch_idx, frame_idx))
+			plt.savefig("states/%05d_%08d.png" % (ofs + batch_idx, frame_idx))
 		ofs += batch_size
 		if ofs > max_states:
 			break
@@ -194,6 +194,7 @@ if __name__ == '__main__':
 			if new_rewards:
 				if reward_tracker.reward(new_rewards[0], frame_idx, selector.epsilon):
 					break
+
 			if len(buffer) < params['replay_initial']:
 				continue
 
